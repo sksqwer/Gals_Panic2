@@ -4,9 +4,11 @@
 #include "framework.h"
 
 FLOAT Distance(Point a, Point b);
-BOOL on_the_line(Point v1, Point v2, Point p); 
+BOOL on_the_line(Point v1, Point v2, Point p);
+BOOL is_in_Polygon(std::vector<Point> v, Point p);
+void Getminmax(Point a, Point b, int &minx, int &maxx, int &miny, int &maxy);
+int Rel_linedot(Point a, Point b, Point c);
 bool operator!=(const Point a, const Point b);
-
 bool operator==(const Point a, const Point b);
 
 class Gamemanager
@@ -30,7 +32,7 @@ public:
 	void BackPoiner();
 	bool is_inmove();
 	bool is_outmove();
-
+	void Combine_Polygon();
 
 };
 

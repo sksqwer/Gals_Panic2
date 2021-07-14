@@ -16,6 +16,87 @@ BOOL on_the_line(Point v1, Point v2, Point p)
 	else
 		return false;
 }
+
+BOOL is_in_Polygon(std::vector<Point> v, Point p)
+{
+	bool left = false, right = false, top = false, bottom = false;
+	int minx, maxx, miny, maxy;
+	int temp;
+	int vsize = v.size();
+	Point a, b;
+	for (int i = 0; i < vsize; i++)
+	{
+		if (i == vsize - 1)
+		{
+			a = v[i];
+			b = v[0];
+		}
+		else
+		{
+			a = v[i];
+			b = v[i + 1];
+		}
+
+
+		Getminmax(a, b, minx, maxx, miny, maxy);
+		temp = Rel_linedot(a, b, p);
+
+		if (temp == 0) return true;
+
+		if (p.X >= minx && p.X <= maxx)
+		{
+			if (temp > 0)
+				bottom = true;
+			else
+				top = true;
+		}
+		if (p.Y >= miny && p.Y <= maxy)
+		{
+			if (temp > 0)
+				right = true;
+			else
+				left = true;
+		}
+
+	}
+	if (top && bottom && left && right)
+		return true;
+
+
+	return false;
+}
+int Rel_linedot(Point a, Point b, Point c)
+{
+	int res = (a.Y - b.Y) * c.X + (b.X - a.X) * c.Y + a.X * b.Y - b.X * a.Y;
+	return res;
+}
+
+
+void Getminmax(Point a, Point b, int & minx, int & maxx, int & miny, int & maxy)
+{
+	if (a.X > b.X)
+	{
+		minx = b.X;
+		maxx = a.X;
+	}
+	else
+	{
+		minx = a.X;
+		maxx = b.X;
+	}
+
+	if (a.Y > b.Y)
+	{
+		miny = b.Y;
+		maxy = a.Y;
+	}
+	else
+	{
+		miny = a.Y;
+		maxy = b.Y;
+	}
+}
+
 bool operator!=(const Point a, const Point b)
 {
 	if (a.X == b.X && a.Y == b.Y)
@@ -95,19 +176,11 @@ void Gamemanager::GameScreen(HWND hWnd, HDC hdc)
 	graphics.DrawImage(HImage, 0, 0);
 	delete[] polyPoints;
 	
-	//Pointer Image
 	Graphics graphics2(memDC);
 	graphics2.SetCompositingQuality(CompositingQuality::CompositingQualityAssumeLinear);
 	graphics2.SetSmoothingMode(SmoothingMode::SmoothingModeAntiAlias);
 	graphics2.SetInterpolationMode(InterpolationMode::InterpolationModeHighQualityBicubic);
 	graphics2.SetPixelOffsetMode(PixelOffsetMode::PixelOffsetModeHighQuality);
-	ImageAttributes imAtt;
-	imAtt.SetColorKey(Color(255, 0, 255), Color(255, 0, 255), ColorAdjustTypeBitmap);
-	graphics2.DrawImage(PImage, 
-		Rect(pointer.X - 5, pointer.Y - 5, 10, 10),
-		0, 0, 10, 10,
-		UnitPixel,
-		&imAtt);
 
 
 	//drawline
@@ -127,6 +200,14 @@ void Gamemanager::GameScreen(HWND hWnd, HDC hdc)
 	}
 
 
+	//Pointer Image
+	ImageAttributes imAtt;
+	imAtt.SetColorKey(Color(255, 0, 255), Color(255, 0, 255), ColorAdjustTypeBitmap);
+	graphics2.DrawImage(PImage,
+		Rect(pointer.X - 5, pointer.Y - 5, 10, 10),
+		0, 0, 10, 10,
+		UnitPixel,
+		&imAtt);
 
 	BitBlt(hdc, 0, 0, bx, by, memDC, 0, 0, SRCCOPY);
 	SelectObject(memDC, old);
@@ -206,7 +287,6 @@ void Gamemanager::MovePointer()
 		{
 			if (outpointVertex.size() > 0)
 			{
-
 				pointer_v.X = 0;
 				pointer_v.Y = 0;
 			}
@@ -219,7 +299,7 @@ void Gamemanager::MovePointer()
 
 
 		}
-		else if(is_outmove())
+		else if(is_outmove() && !is_in_Polygon(inpointV, pointer))
 		{
 			Point v = { pointer.X - pre.X, pointer.Y - pre.Y };
 
@@ -291,4 +371,9 @@ bool Gamemanager::is_outmove()
 			return false;
 	}
 	return true;
+}
+
+void Gamemanager::Combine_Polygon()
+{
+
 }
