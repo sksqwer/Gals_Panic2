@@ -3,6 +3,7 @@
 
 #include "framework.h"
 #include "Gals_Panic2.h"
+#include "GP.h"
 
 #define MAX_LOADSTRING 100
 
@@ -11,11 +12,20 @@ HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 
+//
+Gamemanager g;
+ULONG_PTR g_GdiToken;
+
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+//
+void GDI_Init();
+void GDI_End();
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -26,6 +36,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: 여기에 코드를 입력합니다.
+
 
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -43,14 +54,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MSG msg;
 
     // 기본 메시지 루프입니다:
-    while (GetMessage(&msg, nullptr, 0, 0))
+   /* while (GetMessage(&msg, nullptr, 0, 0))
     {
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-    }
+    }*/
+	while (true) {
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			if (msg.message == WM_QUIT) {
+				break;
+			}
+			else {
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+		else {
+			g.Update();
+		}
+	}
+
 
     return (int) msg.wParam;
 }
@@ -142,15 +168,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
+	case WM_CREATE:
+		GDI_Init();
+		g.set();
+		SetTimer(hWnd, 1, 16, NULL);
+		break;
+	case WM_TIMER:
+		InvalidateRect(hWnd, NULL, false);
+		break;
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+			g.GameScreen(hWnd, hdc);
+
             EndPaint(hWnd, &ps);
         }
         break;
     case WM_DESTROY:
+		g.Gamemanager_shutdown();
+		GDI_End();
+		KillTimer(hWnd, 1);
         PostQuitMessage(0);
         break;
     default:
@@ -177,4 +216,13 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+void GDI_Init()
+{
+	GdiplusStartupInput gpsi;
+	GdiplusStartup(&g_GdiToken, &gpsi, NULL);
+}
+void GDI_End()
+{
+	GdiplusShutdown(g_GdiToken);
 }

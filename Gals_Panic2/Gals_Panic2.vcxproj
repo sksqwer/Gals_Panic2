@@ -153,11 +153,13 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="Gals_Panic2.h" />
+    <ClInclude Include="GP.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Gals_Panic2.cpp" />
+    <ClCompile Include="GP.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Gals_Panic2.rc" />
