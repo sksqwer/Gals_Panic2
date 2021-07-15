@@ -7,6 +7,9 @@ FLOAT Distance(Point a, Point b)
 
 BOOL on_the_line(Point v1, Point v2, Point p)
 {
+	if (v1 == p)
+		return false;
+
 	FLOAT sumlen = Distance(v1, v2);
 	FLOAT len1 = Distance(v1, p);
 	FLOAT len2 = Distance(v2, p);
@@ -17,54 +20,54 @@ BOOL on_the_line(Point v1, Point v2, Point p)
 		return false;
 }
 
-BOOL is_in_Polygon(std::vector<Point> v, Point p)
-{
-	bool left = false, right = false, top = false, bottom = false;
-	int minx, maxx, miny, maxy;
-	int temp;
-	int vsize = v.size();
-	Point a, b;
-	for (int i = 0; i < vsize; i++)
-	{
-		if (i == vsize - 1)
-		{
-			a = v[i];
-			b = v[0];
-		}
-		else
-		{
-			a = v[i];
-			b = v[i + 1];
-		}
-
-
-		Getminmax(a, b, minx, maxx, miny, maxy);
-		temp = Rel_linedot(a, b, p);
-
-		if (temp == 0) return true;
-
-		if (p.X >= minx && p.X <= maxx)
-		{
-			if (temp > 0)
-				bottom = true;
-			else
-				top = true;
-		}
-		if (p.Y >= miny && p.Y <= maxy)
-		{
-			if (temp > 0)
-				right = true;
-			else
-				left = true;
-		}
-
-	}
-	if (top && bottom && left && right)
-		return true;
-
-
-	return false;
-}
+//BOOL is_in_Polygon(std::vector<Point> v, Point p)
+//{
+//	bool left = false, right = false, top = false, bottom = false;
+//	int minx, maxx, miny, maxy;
+//	int temp;
+//	int vsize = v.size();
+//	Point a, b;
+//	for (int i = 0; i < vsize; i++)
+//	{
+//		if (i == vsize - 1)
+//		{
+//			a = v[i];
+//			b = v[0];
+//		}
+//		else
+//		{
+//			a = v[i];
+//			b = v[i + 1];
+//		}
+//
+//
+//		Getminmax(a, b, minx, maxx, miny, maxy);
+//		temp = Rel_linedot(a, b, p);
+//
+//		if (temp == 0) return true;
+//
+//		if (p.X >= minx && p.X <= maxx)
+//		{
+//			if (temp > 0)
+//				bottom = true;
+//			else
+//				top = true;
+//		}
+//		if (p.Y >= miny && p.Y <= maxy)
+//		{
+//			if (temp > 0)
+//				right = true;
+//			else
+//				left = true;
+//		}
+//
+//	}
+//	if (top && bottom && left && right)
+//		return true;
+//
+//
+//	return false;
+//}
 int Rel_linedot(Point a, Point b, Point c)
 {
 	int res = (a.Y - b.Y) * c.X + (b.X - a.X) * c.Y + a.X * b.Y - b.X * a.Y;
@@ -265,61 +268,26 @@ void Gamemanager::MovePointer()
 		pre = pointer;
 		if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
 			pointer.X++;
+			space_move();
+			pre = pointer;
 		}
-		if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
+		else if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
 			pointer.X--;
+			space_move();
+			pre = pointer;
 		}
 		if (GetAsyncKeyState(VK_UP) & 0x8000) {
 			pointer.Y--;
+			space_move();
+			pre = pointer;
 		}
-		if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
+		else if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
 			pointer.Y++;
+			space_move();
+			pre = pointer;
 		}
 
-		if (pointer == pre)
-		{
-			if (outpointV.size() > 0)
-			{
-				BackPoiner();
-			}
-		}
-		else if (is_inmove())
-		{
-			if (outpointVertex.size() > 0)
-			{
-				pointer_v.X = 0;
-				pointer_v.Y = 0;
-			}
-			else
-			{
-				pointer = pre;
-			}
 
-
-
-
-		}
-		else if(is_outmove() && !is_in_Polygon(inpointV, pointer))
-		{
-			Point v = { pointer.X - pre.X, pointer.Y - pre.Y };
-
-			if (v == pointer_v)
-			{
-				outpointV.push_back(pointer);
-			}
-			else
-			{
-				outpointV.push_back(pointer);
-				outpointVertex.push_back(pointer);
-				pointer_v = v;
-			}
-
-
-		}
-		else
-		{
-			pointer = pre;
-		}
 
 
 
@@ -338,6 +306,11 @@ void Gamemanager::BackPoiner()
 		outpointVertex.erase(outpointVertex.end() - 1);
 	}
 	outpointV.erase(outpointV.end() - 1);
+	if (outpointV.empty())
+	{
+		pointer_v.X = 0;
+		pointer_v.Y = 0;
+	}
 }
 
 bool Gamemanager::is_inmove()
@@ -373,7 +346,214 @@ bool Gamemanager::is_outmove()
 	return true;
 }
 
+void Gamemanager::space_move()
+{
+	if (pointer == pre)
+	{
+		if (outpointV.size() > 0)
+		{
+			BackPoiner();
+		}
+	}
+	else if (is_inmove())
+	{
+		if (outpointVertex.size() > 0)
+		{
+			outpointVertex.push_back(pre);
+			outpointVertex.push_back(pointer);
+			Combine_Polygon();
+
+			outpointVertex.clear();
+			outpointV.clear();
+
+			pointer_v.X = 0;
+			pointer_v.Y = 0;
+		}
+
+
+
+
+	}
+	else if (is_outmove())
+	{
+		if (outpointV.size() == 0)
+		{
+			Point a = { 0, 0 }, b = { 0, 0 };
+			int PVsize = inpointV.size();
+			if (PVsize > 0)
+			{
+				for (int i = 0; i < PVsize - 1; i++)
+				{
+					if (on_the_line(inpointV[i], inpointV[i + 1], pre))
+					{
+						a = inpointV[i];
+						b = inpointV[i + 1];
+					}
+				}
+				if (on_the_line(inpointV[PVsize - 1], inpointV[0], pre))
+				{
+					a = inpointV[PVsize - 1];
+					b = inpointV[0];
+				}
+			}
+
+			if (a != b)
+			{
+				if (Rel_linedot(a, b, pointer) > 0)
+				{
+					pointer = pre;
+					return;
+				}
+			}
+
+		}
+
+		Point v = { pointer.X - pre.X, pointer.Y - pre.Y };
+
+		if (v == pointer_v)
+		{
+			outpointV.push_back(pre);
+		}
+		else
+		{
+			outpointV.push_back(pre);
+			outpointVertex.push_back(pre);
+			pointer_v = v;
+		}
+
+
+	}
+	else
+	{
+		pointer = pre;
+	}
+}
+
 void Gamemanager::Combine_Polygon()
 {
+	// CombineV
 
+	std::vector<Point> CombineV;
+	int PVsize = outpointVertex.size();
+	int Area = getArea(outpointVertex);
+   	if (Area > 0)
+	{
+		for (int i = PVsize - 1; i >= 0; i--)
+		{
+			CombineV.push_back(outpointVertex[i]);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < PVsize; i++)
+		{
+			CombineV.push_back(outpointVertex[i]);
+		}
+	}
+	Point StartP = CombineV[0], endP = CombineV.back();
+	Point startLine, endLine;
+	int index_startLine, index_endLine;
+	
+	PVsize = inpointV.size();
+	if (PVsize > 0)
+	{
+		for (int i = 0; i < PVsize - 1; i++)
+		{
+			if (on_the_line(inpointV[i], inpointV[i + 1], StartP))
+			{
+				index_startLine = i;
+				startLine = inpointV[i];
+			}
+
+			if (on_the_line(inpointV[i], inpointV[i + 1], endP))
+			{
+				index_endLine = i;
+				endLine = inpointV[i];
+			}
+		}
+		if (on_the_line(inpointV[PVsize - 1], inpointV[0], StartP))
+		{
+			index_startLine = PVsize - 1;
+			startLine = inpointV[PVsize - 1];
+		}
+
+		if (on_the_line(inpointV[PVsize - 1], inpointV[0], endP))
+		{
+			index_endLine = PVsize - 1;
+			endLine = inpointV[PVsize - 1];
+		}
+	}
+	
+	if (index_endLine == index_startLine)
+	{
+		/*if (!on_the_line(StartP, startLine, endP))
+		{
+			int temp = index_startLine;
+			index_startLine = index_endLine;
+			index_endLine = temp;
+
+			Point temp2 = StartP;
+			StartP = endP;
+			endP = temp2;
+		}
+		if ((StartP.X < endP.X && StartP.Y == endP.Y )|| (StartP.Y > endP.Y && StartP.X == endP.X))
+		{
+
+			PVsize = inpointV.size();
+			for (int i = (index_endLine + 1) % PVsize; i != (index_endLine) % PVsize; i = ++i % PVsize)
+			{
+				CombineV.push_back(inpointV[i]);
+			}
+			CombineV.push_back(inpointV[index_endLine]);
+		}*/
+
+		if (!on_the_line(StartP, startLine, endP))
+		{
+			PVsize = inpointV.size();
+			for (int i = (index_endLine + 1) % PVsize; i != (index_endLine) % PVsize; i = ++i % PVsize)
+			{
+				CombineV.push_back(inpointV[i]);
+			}
+			CombineV.push_back(inpointV[index_endLine]);
+
+		}
+	}
+	else
+	{
+		PVsize = inpointV.size();
+		for (int i = (index_endLine + 1) % PVsize; i != (index_startLine + 1) % PVsize; i = ++i % PVsize)
+		{
+			CombineV.push_back(inpointV[i]);
+		}
+	}
+
+		inpointV.clear();
+
+
+
+		for (int i = 0; i < CombineV.size(); i++)
+			inpointV.push_back(CombineV[i]);
+
+
+
+
+
+}
+
+int getArea(std::vector<Point> v)
+{
+	int Area = 0;
+	for (int i = 0; i < v.size(); i++)
+	{
+		Point a = v[i], b;
+		if (i == v.size() - 1)
+			b = v[0];
+		else
+			b = v[i + 1];
+
+		if(b.X != a.X)
+			Area += (b.X - a.X) * (a.Y +  b.Y) * 0.5;
+	}
+
+	return Area;
 }
