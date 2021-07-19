@@ -20,58 +20,84 @@ BOOL on_the_line(Point v1, Point v2, Point p)
 		return false;
 }
 
-//BOOL is_in_Polygon(std::vector<Point> v, Point p)
-//{
-//	bool left = false, right = false, top = false, bottom = false;
-//	int minx, maxx, miny, maxy;
-//	int temp;
-//	int vsize = v.size();
-//	Point a, b;
-//	for (int i = 0; i < vsize; i++)
-//	{
-//		if (i == vsize - 1)
-//		{
-//			a = v[i];
-//			b = v[0];
-//		}
-//		else
-//		{
-//			a = v[i];
-//			b = v[i + 1];
-//		}
-//
-//
-//		Getminmax(a, b, minx, maxx, miny, maxy);
-//		temp = Rel_linedot(a, b, p);
-//
-//		if (temp == 0) return true;
-//
-//		if (p.X >= minx && p.X <= maxx)
-//		{
-//			if (temp > 0)
-//				bottom = true;
-//			else
-//				top = true;
-//		}
-//		if (p.Y >= miny && p.Y <= maxy)
-//		{
-//			if (temp > 0)
-//				right = true;
-//			else
-//				left = true;
-//		}
-//
-//	}
-//	if (top && bottom && left && right)
-//		return true;
-//
-//
-//	return false;
-//}
+BOOL on_the_line2(Point v1, Point v2, Point p)
+{
+	FLOAT sumlen = Distance(v1, v2);
+	FLOAT len1 = Distance(v1, p);
+	FLOAT len2 = Distance(v2, p);
+
+	if (len1 + len2 == sumlen)
+		return true;
+	else
+		return false;
+}
+
+BOOL is_in_Polygon(std::vector<Point> v, Point p)
+{
+	int left = 0, right = 0, top = 0, bottom = 0;
+	int vsize = v.size();
+	for (int i = 0; i < vsize; i++)
+	{
+		Point a = v[i], b, temp;
+		if (i == v.size() - 1)
+			b = v[0];
+		else
+			b = v[i + 1];
+
+		temp.X = 0;
+		temp.Y = p.Y;
+		if (is_ovelap_line(a, b, temp, p))
+			left++;
+
+		temp.X = p.X;
+		temp.Y = 0;
+		if (is_ovelap_line(a, b, temp, p))
+			top++;
+
+		temp.X = 800;
+		temp.Y = p.Y;
+		if (is_ovelap_line(a, b, temp, p))
+			right++;
+
+		temp.X = p.X;
+		temp.Y = 800;
+		if (is_ovelap_line(a, b, temp, p))
+			bottom++;
+
+	}
+	if (left % 2 && top % 2 && right % 2 && bottom % 2)
+		return true;
+	else
+		return false;
+}
 int Rel_linedot(Point a, Point b, Point c)
 {
 	int res = (a.Y - b.Y) * c.X + (b.X - a.X) * c.Y + a.X * b.Y - b.X * a.Y;
 	return res;
+}
+
+int CCW(Point a, Point b, Point c)
+{
+	int op = a.X * b.Y + b.X * c.Y + c.X + a.Y;
+	op -= (a.Y * b.X + b.Y * c.X + c.Y * a.X);
+	if (op > 0) return 1;
+	else if (op == 0) return 0;
+	else return -1;
+}
+
+bool is_ovelap_line(Point a, Point b, Point c, Point d)
+{
+	int abc = getArea(a, b, c);
+	int abd = getArea(a, b, d);
+	int cda = getArea(c, d, a);
+	int cdb = getArea(c, d, b);
+
+	if ((abc*abd <= 0) && (cda*cdb <= 0))
+	{
+		return true;
+	}
+	else
+		return false;
 }
 
 
@@ -193,12 +219,12 @@ void Gamemanager::GameScreen(HWND hWnd, HDC hdc)
 	{
 		for (int i = 0; i < PVsize - 1; i++)
 		{
-			Pen pen(Color(255, 0, 0, 0));
+			Pen pen(Color(255, 255, 255, 255));
 			graphics2.DrawLine(&pen, outpointVertex[i], outpointVertex[i + 1]);
-			graphics2.DrawEllipse(&pen, outpointVertex[i].X, outpointVertex[i].Y, 1, 1);
+//			graphics2.DrawEllipse(&pen, outpointVertex[i].X, outpointVertex[i].Y, 1, 1);
 		}
 		graphics2.DrawLine(&pen, outpointVertex[PVsize - 1], pointer);
-		graphics2.DrawEllipse(&pen, outpointVertex[PVsize - 1].X - 2, outpointVertex[PVsize - 1].Y - 2, 4, 4);
+//		graphics2.DrawEllipse(&pen, outpointVertex[PVsize - 1].X - 2, outpointVertex[PVsize - 1].Y - 2, 4, 4);
 
 	}
 
@@ -287,11 +313,6 @@ void Gamemanager::MovePointer()
 			pre = pointer;
 		}
 
-
-
-
-
-
 	}
 
 
@@ -338,12 +359,12 @@ bool Gamemanager::is_outmove()
 		for (int i = 0; i < PVsize - 1; i++)
 		{
 			if (on_the_line(outpointVertex[i], outpointVertex[i + 1], pointer))
-				return false;
+				return true;
 		}
-		if (on_the_line(outpointVertex[PVsize - 1], pre, pointer))
-			return false;
+		if (on_the_line(outpointVertex[PVsize - 1], outpointVertex[0], pointer))
+			return true;
 	}
-	return true;
+	return false;
 }
 
 void Gamemanager::space_move()
@@ -369,45 +390,17 @@ void Gamemanager::space_move()
 			pointer_v.X = 0;
 			pointer_v.Y = 0;
 		}
-
+		
 
 
 
 	}
-	else if (is_outmove())
+	else if (is_in_Polygon(inpointV, pointer) || is_outmove())
 	{
-		if (outpointV.size() == 0)
-		{
-			Point a = { 0, 0 }, b = { 0, 0 };
-			int PVsize = inpointV.size();
-			if (PVsize > 0)
-			{
-				for (int i = 0; i < PVsize - 1; i++)
-				{
-					if (on_the_line(inpointV[i], inpointV[i + 1], pre))
-					{
-						a = inpointV[i];
-						b = inpointV[i + 1];
-					}
-				}
-				if (on_the_line(inpointV[PVsize - 1], inpointV[0], pre))
-				{
-					a = inpointV[PVsize - 1];
-					b = inpointV[0];
-				}
-			}
-
-			if (a != b)
-			{
-				if (Rel_linedot(a, b, pointer) > 0)
-				{
-					pointer = pre;
-					return;
-				}
-			}
-
-		}
-
+		pointer = pre;
+	}
+	else
+	{
 		Point v = { pointer.X - pre.X, pointer.Y - pre.Y };
 
 		if (v == pointer_v)
@@ -421,12 +414,28 @@ void Gamemanager::space_move()
 			pointer_v = v;
 		}
 
+	}
+
+	/*else if (is_outmove())
+	{
+		Point v = { pointer.X - pre.X, pointer.Y - pre.Y };
+
+		if (v == pointer_v)
+		{
+			outpointV.push_back(pre);
+		}
+		else
+		{
+			outpointV.push_back(pre);
+			outpointVertex.push_back(pre);
+			pointer_v = v;
+		}
 
 	}
 	else
 	{
 		pointer = pre;
-	}
+	}*/
 }
 
 void Gamemanager::Combine_Polygon()
@@ -486,26 +495,6 @@ void Gamemanager::Combine_Polygon()
 	
 	if (index_endLine == index_startLine)
 	{
-		/*if (!on_the_line(StartP, startLine, endP))
-		{
-			int temp = index_startLine;
-			index_startLine = index_endLine;
-			index_endLine = temp;
-
-			Point temp2 = StartP;
-			StartP = endP;
-			endP = temp2;
-		}
-		if ((StartP.X < endP.X && StartP.Y == endP.Y )|| (StartP.Y > endP.Y && StartP.X == endP.X))
-		{
-
-			PVsize = inpointV.size();
-			for (int i = (index_endLine + 1) % PVsize; i != (index_endLine) % PVsize; i = ++i % PVsize)
-			{
-				CombineV.push_back(inpointV[i]);
-			}
-			CombineV.push_back(inpointV[index_endLine]);
-		}*/
 
 		if (!on_the_line(StartP, startLine, endP))
 		{
@@ -554,6 +543,19 @@ int getArea(std::vector<Point> v)
 		if(b.X != a.X)
 			Area += (b.X - a.X) * (a.Y +  b.Y) * 0.5;
 	}
+
+	return Area;
+}
+
+int getArea(Point a, Point b, Point c)
+{
+	int Area = 0;
+	if (a.X != b.X)
+		Area += (b.X - a.X) * (a.Y + b.Y);
+	if (b.X != c.X)
+		Area += (c.X - b.X) * (b.Y + c.Y);
+	if (c.X != a.X)
+		Area += (a.X - c.X) * (c.Y + a.Y);
 
 	return Area;
 }

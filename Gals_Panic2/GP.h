@@ -5,12 +5,16 @@
 
 FLOAT Distance(Point a, Point b);
 BOOL on_the_line(Point v1, Point v2, Point p);
-//BOOL is_in_Polygon(std::vector<Point> v, Point p);
+BOOL on_the_line2(Point v1, Point v2, Point p);
+BOOL is_in_Polygon(std::vector<Point> v, Point p);
 void Getminmax(Point a, Point b, int &minx, int &maxx, int &miny, int &maxy);
-int Rel_linedot(Point a, Point b, Point c);
+int Rel_linedot(Point a, Point b, Point c); 
+int CCW(Point a, Point b, Point c);
+bool is_ovelap_line(Point a1, Point a2, Point b1, Point b2);
 bool operator!=(const Point a, const Point b);
 bool operator==(const Point a, const Point b);
 int getArea(std::vector<Point>);
+int getArea(Point a, Point b, Point c);
 
 class Gamemanager
 {
